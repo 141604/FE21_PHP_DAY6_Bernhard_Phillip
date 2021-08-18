@@ -11,12 +11,7 @@ require_once 'components/file_upload.php';
 $error = false;
 $fname = $lname = $email = $date_of_birth = $pass = $picture = '';
 $fnameError = $lnameError = $emailError = $dateError = $passError = $picError = '';
-function CleanInput($string) { // sanitize user input to prevent sql injection
-    $new_string = trim($string);
-    $new_string = strip_tags($new_string);
-    $new_string = htmlspecialchars($new_string);
-    return $new_string;
-}
+
 if (isset($_POST['btn-signup'])) {
     // sanitize user input to prevent sql injection
     $fname = CleanInput($_POST['fname']);

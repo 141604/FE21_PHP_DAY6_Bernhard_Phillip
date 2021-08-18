@@ -12,34 +12,59 @@ if (isset($_SESSION["user"])) {
     exit;
 }
 
+
+
 $id = $_SESSION['adm'];
 $status = 'adm';
-#$sql = "SELECT * FROM user WHERE status != '$status'";
-$sql = "SELECT user.id, user.picture, user.first_name, user.last_name, user.email, user.date_of_birth, hotel.room as 'room', hotel.id
-FROM user 
-JOIN booking ON booking.fk_user_id = user.id
-JOIN hotel ON hotel.id = booking.fk_hotel_id
-WHERE user.status != 'adm';";
-
+$sql = "SELECT id, `picture` AS 'Picture', CONCAT(`first_name`, ' ', `last_name`) AS 'Name', `date_of_birth` AS 'Date of Birth', `email` AS 'E-Mail' FROM user WHERE status != '$status';";
 $result = mysqli_query($connect, $sql);
 
-//this variable will hold the body for the table
-$tbody = ''; 
-if ($result->num_rows > 0) {
+$filesAllowed = ["png", "jpg", "jpeg", "webp"];
+$tbody = ''; // this variable will hold the body for the table
+$thead = "<tr>";
+$first = TRUE;
+$i = 0;
+$n = $result->num_rows;
+if ($n > 0) {
     while ($row = $result->fetch_array(MYSQLI_ASSOC)) {
-        $tbody .= "<tr>
-            <td><img class='img-thumbnail rounded-circle' src='pictures/" . $row['picture'] . "' alt=" . $row['first_name'] . "></td>
-            <td>" . $row['first_name'] . " " . $row['last_name'] . "</td>
-            <td>" . $row['date_of_birth'] . "</td>
-            <td>" . $row['email'] . "</td>
-            <td>" . $row['room'] . "</td>
-            <td><a href='update.php?id=" . $row['id'] . "'><button class='btn btn-primary btn-sm' type='button'>Edit</button></a>
-            <a href='delete.php?id=" . $row['id'] . "'><button class='btn btn-danger btn-sm' type='button'>Delete</button></a></td>
-         </tr>";
+        $tbody .= "<tr>";
+        foreach ($row as $key => $value) {
+            $fileExtension = strtolower(pathinfo($value,PATHINFO_EXTENSION));
+            if (in_array($fileExtension, $filesAllowed)) $tbody .= "<td><img class='img-thumbnail rounded-circle' src='pictures/" . $value . "' alt=" . $row['Name'] . "></td>";
+            else $tbody .= "<td>$value</td>";
+            // create table header if we go through the first iteration
+            if ($first) {
+                $thead .= "<th>$key</th>";
+                $i++;
+            }
+        }
+
+        $book_string = "<td>";
+        $qry = "SELECT hotel.room as 'room', booking.date as 'booking_date', user.id FROM user JOIN booking ON booking.fk_user_id = user.id JOIN hotel ON hotel.id = booking.fk_hotel_id WHERE user.status != 'adm' AND user.id = $row[id];";
+        $res = mysqli_query($connect, $qry);
+
+        if (mysqli_num_rows($res) > 0) {
+            while ($row2 = mysqli_fetch_array($res)) $book_string .= $row2["room"]."<br />";
+            # $book_string = rtrim($book_string);
+        } else $book_string .= "-";
+
+        $book_string .= "</td>";
+
+        $tbody .= $book_string;
+
+        $tbody .= "<td><a href='update.php?id=" . $row['id'] . "'><button class='btn btn-primary btn-sm' type='button'>Edit</button></a>
+        <a href='delete.php?id=" . $row['id'] . "'><button class='btn btn-danger btn-sm' type='button'>Delete</button></a></td>
+        </tr>";
+        
+        $first = FALSE;
     }
+    $thead .= "<th>Booked</th><th>Action</th></tr>";
+
 } else {
-    $tbody = "<tr><td colspan='5'><center>No Data Available </center></td></tr>";
+    $tbody = "<tr><td colspan='{$i}'><center>No Data Available </center></td></tr>";
 }
+
+
 
 mysqli_close($connect);
 ?>
@@ -84,14 +109,7 @@ mysqli_close($connect);
         <p class='h2'>Users</p>
         <table class='table table-striped'>
             <thead class='table-success'>
-                <tr>
-                    <th>Picture</th>
-                    <th>Name</th>
-                    <th>Date of birth</th>
-                    <th>Email</th>
-                    <th>Booked</th>
-                    <th>Action</th>
-                </tr>
+                <?= $thead ?>
             </thead>
             <tbody>
             <?=$tbody?>

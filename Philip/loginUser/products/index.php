@@ -28,16 +28,17 @@ $sql = "SELECT * FROM hotel";
 $result = mysqli_query($connect ,$sql);
 $tbody = ''; //this variable will hold the body for the table
 $filesAllowed = ["png", "jpg", "jpeg", "webp"];
-
-if(mysqli_num_rows($result)  > 0) {   
+$n = mysqli_num_rows($result);
+if($n > 0) {   
     while($row = mysqli_fetch_array($result, MYSQLI_ASSOC)){
+        if ($row["id"]) continue;
         $tbody .= "<tr>"; 
         foreach ($row as $key => $value) {
             $fileExtension = strtolower(pathinfo($value,PATHINFO_EXTENSION));
             if (in_array($fileExtension, $filesAllowed)) $tbody .= "<td><img class='img-thumbnail' src='pictures/" .$value."' /></td>";
-            elseif ($key == "duration") $tbody .= "<td>" .$value." week(s)</td>";
+            elseif ($key == "duration") $tbody .= "<td>" .$value." week".(($value > 1 ? 's' : ''))."</td>";
             elseif ($key == "price") $tbody .= "<td>" .$value."&euro;</td>";
-            elseif ($value == "booked") $tbody .= "<td colspan='2' class='text-muted'><em>not available</em></td>";
+            elseif ($value == "booked" && isset($_SESSION['user'])) $tbody .= "<td colspan='2' class='text-muted'><em>not available</em></td>";
             else $tbody .= "<td>$value</td>";
         }
 
